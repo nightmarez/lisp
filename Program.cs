@@ -3,11 +3,22 @@
 Console.WriteLine("LISP interpreter");
 Console.WriteLine();
 
-var source = File.ReadLines("..\\..\\..\\demo.lisp");
+try
+{
+    var source = File.ReadLines("..\\..\\..\\demo.lisp");
 
-var interpreter = new Interpreter();
+    var interpreter = new Interpreter();
 
-interpreter.Run(source);
+    interpreter.Run(source);
+}
+catch (TokenizerException e)
+{
+    Console.WriteLine(e.Message);
+}
+catch (InterpreterException e)
+{
+    Console.WriteLine(e.Message);
+}
 
 Console.WriteLine();
 Console.WriteLine("Done");

@@ -2,19 +2,19 @@
 {
     public static class CharExtensions
     {
-        public static bool IsOperator(this char c)
+        public static bool IsOperator(this char symbol)
         {
-            const string operators = "+-/*^!=";
+            return "+-/*^!=".Any(ch => ch == symbol);
+        }
 
-            foreach (char op in operators)
-            {
-                if (c == op)
-                {
-                    return true;
-                }
-            }
+        public static bool IsOpenBracket(this char symbol)
+        {
+            return symbol == '(';
+        }
 
-            return false;
+        public static bool IsCloseBracket(this char symbol)
+        {
+            return symbol == ')';
         }
     }
 }

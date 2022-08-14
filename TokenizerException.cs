@@ -3,7 +3,7 @@
     public class TokenizerException : ApplicationException
     {
         public TokenizerException(string reason)
-            : base($"Tokenizer Exception: {reason}")
+            : base($"Tokenizer Error: {reason}.")
         { }
     }
 }

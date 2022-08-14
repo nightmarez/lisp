@@ -4,13 +4,7 @@
     {
         public void Run(IEnumerable<string> source)
         {
-            string sourceText = string.Join('\r', source.Where(line =>
-            {
-                line = line.Trim();
-                return line.Length > 0 && line[0] != ';';
-            }));
-
-            List<string> tokens = new Tokenizer().Tokenize(sourceText);
+            List<Token> tokens = new Tokenizer().Tokenize(source);
             Console.WriteLine("Tokens: {0}", string.Join(' ', tokens));
 
             Console.WriteLine();
@@ -23,37 +17,37 @@
             ExecuteTree(tree);
         }
 
-        private TreeNode CreateTree(IEnumerable<string> tokens)
+        private TreeNode CreateTree(IEnumerable<Token> tokens)
         {
             var children = new List<TreeNode>();
             int deep = 0;
-            var inner = new List<string>();
+            var inner = new List<Token>();
 
-            foreach (string token in tokens)
+            foreach (Token token in tokens)
             {
                 if (deep == 0)
                 {
-                    if (token == "(")
+                    if (token.Value.IsOpenBracket())
                     {
                         deep++;
                     }
-                    else if (token == ")")
+                    else if (token.Value.IsCloseBracket())
                     {
-                        throw new Exception("Stack underflow");
+                        throw new InterpreterException("Too many brackets", token.Line);
                     }
                     else
                     {
-                        children.Add(new TreeNode(token));
+                        children.Add(new TreeNode(token.Value));
                     }
                 }
                 else
                 {
-                    if (token == "(")
+                    if (token.Value.IsOpenBracket())
                     {
                         deep++;
                         inner.Add(token);
                     }
-                    else if (token == ")")
+                    else if (token.Value.IsCloseBracket())
                     {
                         if (deep > 1)
                         {
