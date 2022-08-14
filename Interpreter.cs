@@ -17,7 +17,7 @@
             ExecuteTree(tree);
         }
 
-        private TreeNode CreateTree(IEnumerable<Token> tokens)
+        private TreeNode CreateTree(List<Token> tokens)
         {
             var children = new List<TreeNode>();
             int deep = 0;
@@ -37,7 +37,7 @@
                     }
                     else
                     {
-                        children.Add(new TreeNode(token.Value));
+                        children.Add(new TreeNode(token.Value, token.Line));
                     }
                 }
                 else
@@ -69,7 +69,7 @@
                 }
             }
 
-            return new TreeNode(children);
+            return new TreeNode(children, tokens.Any() ? tokens.First().Line : 1);
         }
 
         private void PrintTree(TreeNode node)
@@ -106,7 +106,7 @@
             {
                 if (child.Children!.First().Content == "defun")
                 {
-                    Defun(child.Children!);
+                    Defun(child.Children!, node.Line);
                 }
                 else
                 {
@@ -115,7 +115,7 @@
             }
         }
 
-        private void Defun(IEnumerable<TreeNode> nodes)
+        private void Defun(IEnumerable<TreeNode> nodes, int line)
         {
             var defun = nodes.ToList();
             string functionName = defun[1].Content!;
@@ -139,26 +139,25 @@
 
         private string Execute(IEnumerable<TreeNode> nodes, Dictionary<string, string> variables)
         {
-            nodes = nodes.ToList();
-            string function = nodes.First().Content!;
+            var nodesList = nodes.ToList();
+            string function = nodesList[0].Content!;
             var parameters = new List<string>();
 
             if (function == "if")
             {
-                var n = nodes.ToList();
-                string condition = n[1].Content ?? Execute(n[1].Children, variables);
+                string condition = nodesList[1].Content ?? Execute(nodesList[1].Children, variables);
 
                 if (condition == "true")
                 {
-                    return n[2].Content ?? Execute(n[2].Children, variables);
+                    return nodesList[2].Content ?? Execute(nodesList[2].Children, variables);
                 }
                 else
                 {
-                    return n[3].Content ?? Execute(n[3].Children, variables);
+                    return nodesList[3].Content ?? Execute(nodesList[3].Children, variables);
                 }
             }
 
-            foreach (TreeNode node in nodes.Skip(1))
+            foreach (TreeNode node in nodesList.Skip(1))
             {
                 if (node.Content is not null)
                 {
@@ -170,10 +169,10 @@
                 }
             }
 
-            return ExecuteFunction(function, parameters, variables);
+            return ExecuteFunction(function, parameters, variables, nodesList[0].Line);
         }
 
-        private string ExecuteFunction(string function, IEnumerable<string> parameters, Dictionary<string, string> variables)
+        private string ExecuteFunction(string function, IEnumerable<string> parameters, Dictionary<string, string> variables, int line)
         {
             if (function == "print")
             {
@@ -323,7 +322,7 @@
                 return _userFunctions[function](parameters);
             }
 
-            throw new Exception($"Function {function} not exists.");
+            throw new InterpreterException($"Function \"{function}\" not exists", line);
         }
 
         private Dictionary<string, Func<IEnumerable<string>, string>> _userFunctions = new();
