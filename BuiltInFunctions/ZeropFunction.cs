@@ -7,16 +7,16 @@
             return "zerop";
         }
 
-        public override string ExecuteFunction(IEnumerable<string> parameters, Dictionary<string, string> variables, int line)
+        public override string ExecuteFunction(IInterpreter interpreter, Context context)
         {
             try
             {
-                string value = parameters.First();
+                string value = context.Parameters.First();
                 double result;
 
                 if (!double.TryParse(value, out result))
                 {
-                    result = double.Parse(variables[value]);
+                    result = double.Parse(context.Variables[value]);
                 }
 
                 return result == 0 ? "true" : "false";

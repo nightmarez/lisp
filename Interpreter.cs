@@ -2,10 +2,10 @@
 
 namespace MakarovLisp
 {
-    public class Interpreter
+    public class Interpreter : IInterpreter
     {
         private readonly Dictionary<string, BuiltInFunction> _builtInFunctions = new();
-        private readonly Dictionary<string, Func<IEnumerable<string>, string>> _userFunctions = new();
+        private readonly Dictionary<string, Func<Context, string>> _userFunctions = new();
 
         public void Run(IEnumerable<string> source)
         {
@@ -143,10 +143,10 @@ namespace MakarovLisp
             var functionParams = defun[2].Children;
             var functionBody = defun[3].Children;
 
-            _userFunctions.Add(functionName, (IEnumerable<string> parameters) =>
+            _userFunctions.Add(functionName, context =>
             {
                 string[] paramNames = functionParams.Select(p => p.Content).ToArray();
-                string[] paramValues = parameters.ToArray();
+                string[] paramValues = context.Parameters.ToArray();
                 var kvp = new Dictionary<string, string>();
 
                 for (int i = 0; i < paramNames.Length; ++i)
@@ -190,22 +190,24 @@ namespace MakarovLisp
                 }
             }
 
-            return ExecuteFunction(function, parameters, variables, nodesList[0].Line);
+            var context = new Context(parameters, variables, nodesList[0].Line);
+
+            return ExecuteFunction(function, context);
         }
 
-        private string ExecuteFunction(string function, IEnumerable<string> parameters, Dictionary<string, string> variables, int line)
+        public string ExecuteFunction(string function, Context context)
         {
-            if (_builtInFunctions.ContainsKey(function))
-            {
-                return _builtInFunctions[function].ExecuteFunction(parameters, variables, line);
-            }
-
             if (_userFunctions.ContainsKey(function))
             {
-                return _userFunctions[function](parameters);
+                return _userFunctions[function](context);
             }
 
-            throw new InterpreterException($"Function \"{function}\" not exists", line);
+            if (_builtInFunctions.ContainsKey(function))
+            {
+                return _builtInFunctions[function].ExecuteFunction(this, context);
+            }
+
+            throw new InterpreterException($"Function \"{function}\" not exists", context.Line);
         }
     }
 }

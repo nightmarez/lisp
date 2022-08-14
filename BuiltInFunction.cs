@@ -4,6 +4,6 @@
     {
         public abstract string GetName();
 
-        public abstract string ExecuteFunction(IEnumerable<string> parameters, Dictionary<string, string> variables, int line);
+        public abstract string ExecuteFunction(IInterpreter interpreter, Context context);
     }
 }

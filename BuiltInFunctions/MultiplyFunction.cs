@@ -7,17 +7,17 @@
             return "*";
         }
 
-        public override string ExecuteFunction(IEnumerable<string> parameters, Dictionary<string, string> variables, int line)
+        public override string ExecuteFunction(IInterpreter interpreter, Context context)
         {
-            string value = parameters.First();
+            string value = context.Parameters.First();
             double result;
 
             if (!double.TryParse(value, out result))
             {
-                result = double.Parse(variables[value]);
+                result = double.Parse(context.Variables[value]);
             }
 
-            foreach (string parameter in parameters.Skip(1))
+            foreach (string parameter in context.Parameters.Skip(1))
             {
                 double p = double.Parse(parameter);
                 result *= p;

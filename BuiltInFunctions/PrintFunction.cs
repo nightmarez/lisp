@@ -7,9 +7,9 @@
             return "print";
         }
 
-        public override string ExecuteFunction(IEnumerable<string> parameters, Dictionary<string, string> variables, int line)
+        public override string ExecuteFunction(IInterpreter interpreter, Context context)
         {
-            string content = parameters.First();
+            string content = context.Parameters.First();
             Console.WriteLine(content);
             return content.Length.ToString();
         }
