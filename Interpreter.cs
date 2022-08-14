@@ -1,20 +1,41 @@
-﻿namespace MakarovLisp
+﻿using System.Reflection;
+
+namespace MakarovLisp
 {
     public class Interpreter
     {
+        private readonly Dictionary<string, BuiltInFunction> _builtInFunctions = new();
+        private readonly Dictionary<string, Func<IEnumerable<string>, string>> _userFunctions = new();
+
         public void Run(IEnumerable<string> source)
         {
             List<Token> tokens = new Tokenizer().Tokenize(source);
-            Console.WriteLine("Tokens: {0}", string.Join(' ', tokens));
+            Console.WriteLine("Tokens: {0}", string.Join(' ', tokens.Select(token => token.Value)));
 
             Console.WriteLine();
             Console.WriteLine("Tree:");
             TreeNode tree = CreateTree(tokens);
             PrintTree(tree);
 
+            InitBuiltInFunctions();
+
             Console.WriteLine();
             Console.WriteLine("Execute...");
             ExecuteTree(tree);
+        }
+
+        private void InitBuiltInFunctions()
+        {
+            var baseClass = typeof(BuiltInFunction);
+
+            foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
+            {
+                if (type.IsSubclassOf(baseClass))
+                {
+                    var instance = (BuiltInFunction)Activator.CreateInstance(type)!;
+                    _builtInFunctions.Add(instance.GetName(), instance);
+                }
+            }
         }
 
         private TreeNode CreateTree(List<Token> tokens)
@@ -174,147 +195,9 @@
 
         private string ExecuteFunction(string function, IEnumerable<string> parameters, Dictionary<string, string> variables, int line)
         {
-            if (function == "print")
+            if (_builtInFunctions.ContainsKey(function))
             {
-                string content = parameters.First();
-                Console.WriteLine(content);
-                return content.Length.ToString();
-            }
-
-            if (function == "+")
-            {
-                string value = parameters.First();
-                double result;
-
-                if (!double.TryParse(value, out result))
-                {
-                    result = double.Parse(variables[value]);
-                }
-
-                foreach (string parameter in parameters.Skip(1))
-                {
-                    double p = double.Parse(parameter);
-                    result += p;
-                }
-
-                return result.ToString();
-            }
-
-            if (function == "-")
-            {
-                string value = parameters.First();
-                double result;
-
-                if (!double.TryParse(value, out result))
-                {
-                    result = double.Parse(variables[value]);
-                }
-
-                foreach (string parameter in parameters.Skip(1))
-                {
-                    double p = double.Parse(parameter);
-                    result -= p;
-                }
-
-                return result.ToString();
-            }
-
-            if (function == "*")
-            {
-                string value = parameters.First();
-                double result;
-
-                if (!double.TryParse(value, out result))
-                {
-                    result = double.Parse(variables[value]);
-                }
-
-                foreach (string parameter in parameters.Skip(1))
-                {
-                    double p = double.Parse(parameter);
-                    result *= p;
-                }
-
-                return result.ToString();
-            }
-
-            if (function == "/")
-            {
-                string value = parameters.First();
-                double result;
-
-                if (!double.TryParse(value, out result))
-                {
-                    result = double.Parse(variables[value]);
-                }
-
-                foreach (string parameter in parameters.Skip(1))
-                {
-                    double p = double.Parse(parameter);
-                    result /= p;
-                }
-
-                return result.ToString();
-            }
-
-            if (function == ">")
-            {
-                string p1 = parameters.First();
-                string p2 = parameters.Last();
-                double r1;
-                double r2;
-
-                if (!double.TryParse(p1, out r1))
-                {
-                    r1 = double.Parse(variables[p1]);
-                }
-
-                if (!double.TryParse(p2, out r2))
-                {
-                    r2 = double.Parse(variables[p2]);
-                }
-
-                return r1 > r2 ? "true" : "false";
-            }
-
-            if (function == "<")
-            {
-                string p1 = parameters.First();
-                string p2 = parameters.Last();
-                double r1;
-                double r2;
-
-                if (!double.TryParse(p1, out r1))
-                {
-                    r1 = double.Parse(variables[p1]);
-                }
-
-                if (!double.TryParse(p2, out r2))
-                {
-                    r2 = double.Parse(variables[p2]);
-                }
-
-                return r1 < r2 ? "true" : "false";
-            }
-
-            if (function == "zerop")
-            {
-                try
-                {
-                    string value = parameters.First();
-                    double result;
-
-                    if (!double.TryParse(value, out result))
-                    {
-                        result = double.Parse(variables[value]);
-                    }
-
-                    return result == 0 ? "true" : "false";
-                }
-                catch
-                {
-                    return "false";
-                }
+                return _builtInFunctions[function].ExecuteFunction(parameters, variables, line);
             }
 
             if (_userFunctions.ContainsKey(function))
@@ -324,7 +207,5 @@
 
             throw new InterpreterException($"Function \"{function}\" not exists", line);
         }
-
-        private Dictionary<string, Func<IEnumerable<string>, string>> _userFunctions = new();
     }
 }
